@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  database:
+    build:
+      context: .
+      dockerfile: docker/database/Dockerfile
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=edi_user
+      - POSTGRES_PASSWORD=Alsep9511***
+      - POSTGRES_DB=edi_erp
+    networks:
+      - edi-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edi_user -d edi_erp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend/Dockerfile
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_USERNAME=edi_user
+      - DB_PASSWORD=Alsep9511***
+      - DB_NAME=edi_erp
+      - DB_SYNC=false
+      - DB_LOGGING=true
+      - JWT_SECRET=development-secret-key
+    networks:
+      - edi-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend/Dockerfile
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - edi-network
+
+networks:
+  edi-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

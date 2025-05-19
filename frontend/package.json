@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "@quasar/cli": "^2.5.0"
+  },
+  "dependencies": {
+    "quasar": "^2.18.1"
+  }
+}
