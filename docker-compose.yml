@@ -9,9 +9,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    env_file: .env
     environment:
       - POSTGRES_USER=edi_user
-      - POSTGRES_PASSWORD=Alsep9511***
       - POSTGRES_DB=edi_erp
     networks:
       - edi-network
@@ -33,16 +33,15 @@ services:
     depends_on:
       database:
         condition: service_healthy
+    env_file: .env
     environment:
       - NODE_ENV=development
       - DB_HOST=database
       - DB_PORT=5432
       - DB_USERNAME=edi_user
-      - DB_PASSWORD=Alsep9511***
       - DB_NAME=edi_erp
       - DB_SYNC=false
       - DB_LOGGING=true
-      - JWT_SECRET=development-secret-key
     networks:
       - edi-network
 
