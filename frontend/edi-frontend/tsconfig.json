@@ -16,7 +16,8 @@
       "boot/*": ["src/boot/*"],
       "layouts/*": ["src/layouts/*"],
       "pages/*": ["src/pages/*"],
-      "stores/*": ["src/stores/*"]
+      "stores/*": ["src/stores/*"],
+      "i18n/*": ["src/i18n/*"]
     },
     "types": ["vite/client", "node"]
   },

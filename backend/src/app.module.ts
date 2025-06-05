@@ -2,6 +2,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from './config/configuration';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { I18nModule, I18nJsonParser, QueryResolver, AcceptLanguageResolver } from '@nestjs/i18n';
+import { join } from 'path';
+
+import { HelloController } from './hello.controller';
 
 // Interceptor
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
@@ -19,6 +23,19 @@ import { SalesModule } from './modules/sales/sales.module';
   imports: [
     // Configuración global y carga de variables desde .env
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
+
+    I18nModule.forRoot({
+      fallbackLanguage: 'en',
+      parser: I18nJsonParser,
+      parserOptions: {
+        path: join(__dirname, '/i18n/'),
+        watch: false,
+      },
+      resolvers: [
+        { use: QueryResolver, options: ['lang'] },
+        AcceptLanguageResolver,
+      ],
+    }),
 
     // Configuración asíncrona de TypeORM utilizando ConfigService
     TypeOrmModule.forRootAsync({
@@ -46,6 +63,7 @@ import { SalesModule } from './modules/sales/sales.module';
     InventoryModule,
     SalesModule,
   ],
+  controllers: [HelloController],
   providers: [
     {
       provide: APP_INTERCEPTOR,

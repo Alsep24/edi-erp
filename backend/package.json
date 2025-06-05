@@ -45,7 +45,7 @@
     "serve-static": "^1.16.2",
     "typeorm": "^0.3.24",
     "pdfmake": "^0.2.7",
-    "bcrypt": "^5.1.0"
+    "@nestjs/i18n": "^3.1.0""bcrypt": "^5.1.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.7",

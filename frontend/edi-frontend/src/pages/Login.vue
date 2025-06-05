@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from 'src/stores/auth';
+import { useI18n } from 'vue-i18n';
 import { api } from 'boot/axios';
 
 const router = useRouter();
@@ -65,7 +66,6 @@ async function handleLogin() {
       </q-card-section>
     </q-card>
   </q-page>
-=======
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from 'src/stores/auth';
@@ -73,6 +73,7 @@ import { api } from 'boot/axios';
 
 const router = useRouter();
 const auth = useAuthStore();
+const { t } = useI18n();
 
 const username = ref('');
 const password = ref('');
@@ -103,6 +104,12 @@ async function handleLogin() {
 </script>
 
 <template>
+  <div>
+    <button @click="handleLogin">{{ t('login.button') }}</button>
+    <p v-if="auth.isLoggedIn">{{ t('login.userLabel') }} {{ auth.user?.username }}</p>
+  </div>
+</template>
+=======
   <q-page class="flex flex-center">
     <q-card class="q-pa-md" style="min-width: 300px; width: 350px">
       <q-card-section>
