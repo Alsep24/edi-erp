@@ -1,81 +1,136 @@
-<script setup lang="ts">
-import { useAuthStore } from 'src/stores/auth';
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from 'src/stores/auth';
+import { api } from 'boot/axios';
 
+const router = useRouter();
 const auth = useAuthStore();
 
-const form = ref({
-  username: '',
-  password: ''
-});
+const username = ref('');
+const password = ref('');
+const loading = ref(false);
+const error = ref('');
 
-const errors = ref<{ username: string; password: string }>({
-  username: '',
-  password: ''
-});
+async function handleLogin() {
+  loading.value = true;
+  error.value = '';
+  try {
+    const response = await api.post('/auth/login', {
+      username: username.value,
+      password: password.value
+    });
 
-function handleLogin() {
-  errors.value = { username: '', password: '' };
-  let firstInvalid: string | null = null;
-
-  if (!form.value.username) {
-    errors.value.username = 'El usuario es obligatorio';
-    firstInvalid = 'username';
-  }
-
-  if (!form.value.password) {
-    errors.value.password = 'La contraseña es obligatoria';
-    if (!firstInvalid) {
-      firstInvalid = 'password';
+    auth.login(response.data);
+    router.push('/dashboard');
+  } catch (err: any) {
+    if (err.response?.data?.message) {
+      error.value = err.response.data.message;
+    } else {
+      error.value = 'Error al iniciar sesión';
     }
+  } finally {
+    loading.value = false;
   }
-
-  if (firstInvalid) {
-    const el = document.getElementById(firstInvalid);
-    if (el) {
-      (el as HTMLElement).focus();
-    }
-    return;
-  }
-
-  // Aquí simulas la respuesta del backend con usuario y token
-  const userData = {
-    user: { id: '123', username: form.value.username, email: 'jp041922@gmail.com' },
-    token: 'token-jwt-ejemplo'
-  };
-  auth.login(userData);
 }
 </script>
 
 <template>
-  <div>
-    <form @submit.prevent="handleLogin" novalidate>
-      <div class="q-mb-sm">
-        <label for="username">Usuario</label>
-        <input
-          id="username"
-          v-model="form.username"
-          required
-          aria-required="true"
-          :aria-invalid="errors.username ? 'true' : 'false'"
-        />
-        <p v-if="errors.username" role="alert">{{ errors.username }}</p>
-      </div>
-      <div class="q-mb-sm">
-        <label for="password">Contraseña</label>
-        <input
-          id="password"
-          type="password"
-          v-model="form.password"
-          required
-          aria-required="true"
-          :aria-invalid="errors.password ? 'true' : 'false'"
-        />
-        <p v-if="errors.password" role="alert">{{ errors.password }}</p>
-      </div>
-      <button type="submit">Iniciar Sesión</button>
-    </form>
-    <p v-if="auth.isLoggedIn">Usuario: {{ auth.user?.username }}</p>
-  </div>
-</template>
+  <q-page class="flex flex-center">
+    <q-card class="q-pa-md" style="min-width: 300px; width: 350px">
+      <q-card-section>
+        <div class="text-h6">Iniciar sesión</div>
+      </q-card-section>
 
+      <q-card-section>
+        <q-form @submit.prevent="handleLogin">
+          <q-input v-model="username" label="Usuario" dense />
+          <q-input
+            v-model="password"
+            label="Contraseña"
+            type="password"
+            dense
+            class="q-mt-md"
+          />
+
+          <div class="text-negative q-mt-md" v-if="error">{{ error }}</div>
+
+          <q-btn
+            label="Ingresar"
+            type="submit"
+            color="primary"
+            class="q-mt-md"
+            :loading="loading"
+          />
+        </q-form>
+      </q-card-section>
+    </q-card>
+  </q-page>
+=======
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from 'src/stores/auth';
+import { api } from 'boot/axios';
+
+const router = useRouter();
+const auth = useAuthStore();
+
+const username = ref('');
+const password = ref('');
+const loading = ref(false);
+const error = ref('');
+
+async function handleLogin() {
+  loading.value = true;
+  error.value = '';
+  try {
+    const response = await api.post('/auth/login', {
+      username: username.value,
+      password: password.value
+    });
+
+    auth.login(response.data);
+    router.push('/dashboard');
+  } catch (err) {
+    if (err.response?.data?.message) {
+      error.value = err.response.data.message;
+    } else {
+      error.value = 'Error al iniciar sesión';
+    }
+  } finally {
+    loading.value = false;
+  }
+}
+</script>
+
+<template>
+  <q-page class="flex flex-center">
+    <q-card class="q-pa-md" style="min-width: 300px; width: 350px">
+      <q-card-section>
+        <div class="text-h6">Iniciar sesión</div>
+      </q-card-section>
+
+      <q-card-section>
+        <q-form @submit.prevent="handleLogin">
+          <q-input v-model="username" label="Usuario" dense />
+          <q-input
+            v-model="password"
+            label="Contraseña"
+            type="password"
+            dense
+            class="q-mt-md"
+          />
+
+          <div class="text-negative q-mt-md" v-if="error">{{ error }}</div>
+
+          <q-btn
+            label="Ingresar"
+            type="submit"
+            color="primary"
+            class="q-mt-md"
+            :loading="loading"
+          />
+        </q-form>
+      </q-card-section>
+    </q-card>
+  </q-page>
+</template>
