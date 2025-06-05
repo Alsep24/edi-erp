@@ -11,4 +11,6 @@ The backend is built with [NestJS](https://nestjs.com/) and TypeScript. It follo
   - `common/` – shared DTOs and utilities
 - `test/` – unit and e2e tests
 
+Run `npm run test` inside `backend/` to execute the Jest unit tests.
+
 The entry point is `main.ts` and `app.module.ts` brings the modules together. `docker-compose.yml` runs the service as `backend` and connects to the PostgreSQL container.
