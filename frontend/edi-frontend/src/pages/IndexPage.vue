@@ -1,5 +1,6 @@
 <template>
   <q-page class="row items-center justify-evenly">
+    <p>{{ t('hello') }}</p>
     <example-component
       title="Example component"
       active
@@ -11,8 +12,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import type { Todo, Meta } from 'components/models';
 import ExampleComponent from 'components/ExampleComponent.vue';
+
+const { t } = useI18n();
 
 const todos = ref<Todo[]>([
   {

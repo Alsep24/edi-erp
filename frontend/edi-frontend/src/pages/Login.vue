@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useAuthStore } from 'src/stores/auth';
+import { useI18n } from 'vue-i18n';
 const auth = useAuthStore();
+const { t } = useI18n();
 
 function handleLogin() {
   // Aquí simulas la respuesta del backend con usuario y token
@@ -14,8 +16,8 @@ function handleLogin() {
 
 <template>
   <div>
-    <button @click="handleLogin">Login Simulado</button>
-    <p v-if="auth.isLoggedIn">Usuario: {{ auth.user?.username }}</p>
+    <button @click="handleLogin">{{ t('login.button') }}</button>
+    <p v-if="auth.isLoggedIn">{{ t('login.userLabel') }} {{ auth.user?.username }}</p>
   </div>
 </template>
 
