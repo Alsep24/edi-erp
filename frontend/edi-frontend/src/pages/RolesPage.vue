@@ -1,10 +1,28 @@
 <template>
   <q-page class="q-pa-md">
-    <div class="q-mb-md">
-      <q-input v-model="newRole.name" label="Nombre" class="q-mb-sm" />
-      <q-input v-model="newRole.description" label="Descripción" class="q-mb-sm" />
-      <q-btn label="Guardar" color="primary" @click="saveRole" />
-    </div>
+    <form @submit.prevent="saveRole" novalidate class="q-mb-md">
+      <div class="q-mb-sm">
+        <label for="role-name">Nombre</label>
+        <q-input
+          id="role-name"
+          v-model="newRole.name"
+          aria-required="true"
+          :aria-invalid="errors.name ? 'true' : 'false'"
+        />
+        <div v-if="errors.name" role="alert">{{ errors.name }}</div>
+      </div>
+      <div class="q-mb-sm">
+        <label for="role-description">Descripción</label>
+        <q-input
+          id="role-description"
+          v-model="newRole.description"
+          aria-required="true"
+          :aria-invalid="errors.description ? 'true' : 'false'"
+        />
+        <div v-if="errors.description" role="alert">{{ errors.description }}</div>
+      </div>
+      <q-btn label="Guardar" color="primary" type="submit" />
+    </form>
 
     <q-list bordered>
       <q-item v-for="role in rolesStore.roles" :key="role.id">
@@ -26,15 +44,40 @@ import { useRolesStore } from 'stores/roles';
 
 const rolesStore = useRolesStore();
 const newRole = ref({ name: '', description: '' });
+const errors = ref<{ name: string; description: string }>({
+  name: '',
+  description: ''
+});
 
 onMounted(() => {
   rolesStore.fetchRoles();
 });
 
 async function saveRole() {
-  if (newRole.value.name) {
-    await rolesStore.createRole(newRole.value);
-    newRole.value = { name: '', description: '' };
+  errors.value = { name: '', description: '' };
+  let firstInvalid: string | null = null;
+
+  if (!newRole.value.name) {
+    errors.value.name = 'El nombre es obligatorio';
+    firstInvalid = 'role-name';
   }
+
+  if (!newRole.value.description) {
+    errors.value.description = 'La descripción es obligatoria';
+    if (!firstInvalid) {
+      firstInvalid = 'role-description';
+    }
+  }
+
+  if (firstInvalid) {
+    const el = document.getElementById(firstInvalid);
+    if (el) {
+      (el as HTMLElement).focus();
+    }
+    return;
+  }
+
+  await rolesStore.createRole(newRole.value);
+  newRole.value = { name: '', description: '' };
 }
 </script>
