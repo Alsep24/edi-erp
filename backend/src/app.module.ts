@@ -6,6 +6,7 @@ import configuration from './config/configuration';
 // Módulos principales
 // Importamos solo el CoreModule por ahora
 import { CoreModule } from './modules/core/core.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { CoreModule } from './modules/core/core.module';
 
     // Módulos de la aplicación
     CoreModule,
+    UsersModule,
     // Los demás módulos se agregarán a medida que se implementen
   ],
   providers: [],
