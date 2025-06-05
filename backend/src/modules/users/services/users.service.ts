@@ -32,6 +32,10 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { id } });
   }
 
+  findByUsername(username: string) {
+    return this.usersRepository.findOne({ where: { username } });
+  }
+
   async update(id: string, dto: UpdateUserDto) {
     if (dto.password) {
       await this.usersRepository.update(id, {
