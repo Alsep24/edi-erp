@@ -3,7 +3,7 @@ import axios from 'axios';
 import type { App } from 'vue';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api'
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 });
 
 export default boot(({ app }: { app: App }) => {
