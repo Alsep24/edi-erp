@@ -1,12 +1,18 @@
-import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from './config/configuration';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+
+// Interceptor
+import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 
 // Módulos principales
 // Importamos solo el CoreModule por ahora
 import { CoreModule } from './modules/core/core.module';
 import { UsersModule } from './modules/users/users.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
+import { SalesModule } from './modules/sales/sales.module';
 
 @Module({
   imports: [
@@ -34,8 +40,15 @@ import { UsersModule } from './modules/users/users.module';
     // Módulos de la aplicación
     CoreModule,
     UsersModule,
-    // Los demás módulos se agregarán a medida que se implementen
+    AuditModule,
+    InventoryModule,
+    SalesModule,
   ],
-  providers: [],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
+    },
+  ],
 })
 export class AppModule {}
