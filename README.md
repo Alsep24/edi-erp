@@ -32,6 +32,15 @@ This command builds the containers and starts them on their default ports
    npm run start:dev
    ```
 
+### Running tests
+
+Unit tests live in `backend/src` and can be executed with:
+
+```bash
+cd backend
+npm run test
+```
+
 ### Frontend
 
 The frontend has its own README with detailed commands.  In short:
