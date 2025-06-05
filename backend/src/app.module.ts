@@ -11,6 +11,8 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 // Importamos solo el CoreModule por ahora
 import { CoreModule } from './modules/core/core.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
+import { SalesModule } from './modules/sales/sales.module';
 
 @Module({
   imports: [
@@ -38,7 +40,8 @@ import { AuditModule } from './modules/audit/audit.module';
     // Módulos de la aplicación
     CoreModule,
     AuditModule,
-    // Los demás módulos se agregarán a medida que se implementen
+    InventoryModule,
+    SalesModule,
   ],
   providers: [
     {

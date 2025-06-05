@@ -11,4 +11,6 @@ export default boot(({ app }: { app: App }) => {
   app.config.globalProperties.$api = api;
 });
 
+export { api };
+
 
