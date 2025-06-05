@@ -10,6 +10,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 // Importamos solo el CoreModule por ahora
 import { CoreModule } from './modules/core/core.module';
 import { UsersModule } from './modules/users/users.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { SalesModule } from './modules/sales/sales.module';
@@ -40,6 +41,7 @@ import { SalesModule } from './modules/sales/sales.module';
     // Módulos de la aplicación
     CoreModule,
     UsersModule,
+    AuthModule,
     AuditModule,
     InventoryModule,
     SalesModule,

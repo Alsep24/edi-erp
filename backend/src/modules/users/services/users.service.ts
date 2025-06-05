@@ -44,6 +44,10 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { id } });
   }
 
+  findByUsername(username: string) {
+    return this.usersRepository.findOne({ where: { username } });
+  }
+
   async update(id: string, dto: UpdateUserDto) {
     if (dto.password) {
       const passwordHash = await bcrypt.hash(dto.password, this.saltRounds);
