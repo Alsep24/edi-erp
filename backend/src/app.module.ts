@@ -1,4 +1,3 @@
-import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from './config/configuration';
@@ -10,6 +9,7 @@ import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 // Módulos principales
 // Importamos solo el CoreModule por ahora
 import { CoreModule } from './modules/core/core.module';
+import { UsersModule } from './modules/users/users.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { SalesModule } from './modules/sales/sales.module';
@@ -39,6 +39,7 @@ import { SalesModule } from './modules/sales/sales.module';
 
     // Módulos de la aplicación
     CoreModule,
+    UsersModule,
     AuditModule,
     InventoryModule,
     SalesModule,
