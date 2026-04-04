@@ -1,7 +1,7 @@
+<script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from 'src/stores/auth';
-import { useI18n } from 'vue-i18n';
 import { api } from 'boot/axios';
 
 const router = useRouter();
@@ -11,24 +11,25 @@ const username = ref('');
 const password = ref('');
 const loading = ref(false);
 const error = ref('');
+const showPassword = ref(false);
 
 async function handleLogin() {
+  if (!username.value || !password.value) {
+    error.value = 'Por favor ingrese usuario y contraseña';
+    return;
+  }
   loading.value = true;
   error.value = '';
   try {
     const response = await api.post('/auth/login', {
       username: username.value,
-      password: password.value
+      password: password.value,
     });
-
     auth.login(response.data);
-    router.push('/dashboard');
-  } catch (err: any) {
-    if (err.response?.data?.message) {
-      error.value = err.response.data.message;
-    } else {
-      error.value = 'Error al iniciar sesión';
-    }
+    await router.push('/dashboard');
+  } catch (err: unknown) {
+    const e = err as { response?: { data?: { message?: string } } };
+    error.value = e.response?.data?.message ?? 'Error al iniciar sesión. Verifique sus credenciales.';
   } finally {
     loading.value = false;
   }
@@ -36,105 +37,64 @@ async function handleLogin() {
 </script>
 
 <template>
-  <q-page class="flex flex-center">
-    <q-card class="q-pa-md" style="min-width: 300px; width: 350px">
-      <q-card-section>
-        <div class="text-h6">Iniciar sesión</div>
+  <q-page class="flex flex-center bg-grey-2">
+    <q-card class="q-pa-lg shadow-4" style="width: 380px; max-width: 95vw">
+      <q-card-section class="text-center q-pb-none">
+        <q-icon name="inventory_2" size="48px" color="primary" />
+        <div class="text-h5 q-mt-sm text-weight-bold text-primary">EDI-ERP</div>
+        <div class="text-caption text-grey-6">Sistema de Gestión Empresarial</div>
       </q-card-section>
 
       <q-card-section>
-        <q-form @submit.prevent="handleLogin">
-          <q-input v-model="username" label="Usuario" dense />
+        <q-form @submit.prevent="handleLogin" class="q-gutter-md">
+          <q-input
+            v-model="username"
+            label="Usuario"
+            dense
+            outlined
+            prepend-icon="person"
+            autocomplete="username"
+          >
+            <template #prepend>
+              <q-icon name="person" />
+            </template>
+          </q-input>
+
           <q-input
             v-model="password"
             label="Contraseña"
-            type="password"
+            :type="showPassword ? 'text' : 'password'"
             dense
-            class="q-mt-md"
-          />
+            outlined
+            autocomplete="current-password"
+          >
+            <template #prepend>
+              <q-icon name="lock" />
+            </template>
+            <template #append>
+              <q-icon
+                :name="showPassword ? 'visibility_off' : 'visibility'"
+                class="cursor-pointer"
+                @click="showPassword = !showPassword"
+              />
+            </template>
+          </q-input>
 
-          <div class="text-negative q-mt-md" v-if="error">{{ error }}</div>
+          <q-banner v-if="error" class="bg-negative text-white rounded-borders" dense>
+            <template #avatar>
+              <q-icon name="error" />
+            </template>
+            {{ error }}
+          </q-banner>
 
           <q-btn
-            label="Ingresar"
+            label="Iniciar Sesión"
             type="submit"
             color="primary"
-            class="q-mt-md"
+            class="full-width q-mt-sm"
+            unelevated
             :loading="loading"
-          />
-        </q-form>
-      </q-card-section>
-    </q-card>
-  </q-page>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from 'src/stores/auth';
-import { api } from 'boot/axios';
-
-const router = useRouter();
-const auth = useAuthStore();
-const { t } = useI18n();
-
-const username = ref('');
-const password = ref('');
-const loading = ref(false);
-const error = ref('');
-
-async function handleLogin() {
-  loading.value = true;
-  error.value = '';
-  try {
-    const response = await api.post('/auth/login', {
-      username: username.value,
-      password: password.value
-    });
-
-    auth.login(response.data);
-    router.push('/dashboard');
-  } catch (err) {
-    if (err.response?.data?.message) {
-      error.value = err.response.data.message;
-    } else {
-      error.value = 'Error al iniciar sesión';
-    }
-  } finally {
-    loading.value = false;
-  }
-}
-</script>
-
-<template>
-  <div>
-    <button @click="handleLogin">{{ t('login.button') }}</button>
-    <p v-if="auth.isLoggedIn">{{ t('login.userLabel') }} {{ auth.user?.username }}</p>
-  </div>
-</template>
-=======
-  <q-page class="flex flex-center">
-    <q-card class="q-pa-md" style="min-width: 300px; width: 350px">
-      <q-card-section>
-        <div class="text-h6">Iniciar sesión</div>
-      </q-card-section>
-
-      <q-card-section>
-        <q-form @submit.prevent="handleLogin">
-          <q-input v-model="username" label="Usuario" dense />
-          <q-input
-            v-model="password"
-            label="Contraseña"
-            type="password"
-            dense
-            class="q-mt-md"
-          />
-
-          <div class="text-negative q-mt-md" v-if="error">{{ error }}</div>
-
-          <q-btn
-            label="Ingresar"
-            type="submit"
-            color="primary"
-            class="q-mt-md"
-            :loading="loading"
+            size="md"
           />
         </q-form>
       </q-card-section>

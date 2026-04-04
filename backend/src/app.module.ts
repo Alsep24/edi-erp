@@ -1,3 +1,4 @@
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from './config/configuration';
@@ -11,13 +12,13 @@ import { HelloController } from './hello.controller';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 
 // Módulos principales
-// Importamos solo el CoreModule por ahora
 import { CoreModule } from './modules/core/core.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { SalesModule } from './modules/sales/sales.module';
+import { RolesModule } from './modules/roles/roles.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { SalesModule } from './modules/sales/sales.module';
     AuditModule,
     InventoryModule,
     SalesModule,
+    RolesModule,
   ],
   controllers: [HelloController],
   providers: [
