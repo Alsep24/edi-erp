@@ -28,6 +28,11 @@ const routes: RouteRecordRaw[] = [
       },
       // Core
       {
+        path: 'profile',
+        component: () => import('pages/ProfilePage.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
         path: 'companies',
         component: () => import('pages/CompaniesPage.vue'),
         meta: { requiresAuth: true },
@@ -41,6 +46,17 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'products',
         component: () => import('pages/ProductsPage.vue'),
+        meta: { requiresAuth: true },
+      },
+      // Compras
+      {
+        path: 'vendors',
+        component: () => import('pages/VendorsPage.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'purchase-orders',
+        component: () => import('pages/PurchaseOrdersPage.vue'),
         meta: { requiresAuth: true },
       },
       // Ventas

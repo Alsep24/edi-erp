@@ -22,6 +22,8 @@ const navLinks = [
   { title: 'Roles', icon: 'admin_panel_settings', to: '/roles' },
   { title: 'Clientes', icon: 'contacts', to: '/customers', section: 'Ventas' },
   { title: 'Facturas', icon: 'receipt_long', to: '/invoices' },
+  { title: 'Proveedores', icon: 'local_shipping', to: '/vendors', section: 'Compras' },
+  { title: 'Órdenes de Compra', icon: 'shopping_cart', to: '/purchase-orders' },
   { title: 'Productos', icon: 'inventory_2', to: '/products', section: 'Inventario' },
 ];
 

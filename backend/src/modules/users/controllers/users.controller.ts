@@ -1,52 +1,64 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import {
+  Controller, Get, Post, Body, Patch, Param, Delete,
+  UseGuards, ParseUUIDPipe, Request, UnauthorizedException,
+} from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import * as bcrypt from 'bcrypt';
 import { UsersService } from '../services/users.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
-import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@/modules/auth/guards/roles.guard';
-import { Roles } from '@/modules/auth/decorators/roles.decorator';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ChangePasswordDto } from '../dto/change-password.dto';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
+import { Roles } from '../../auth/decorators/roles.decorator';
 
-@ApiTags('Usuarios')
-@Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@ApiTags('users')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
+  @ApiOperation({ summary: 'Crear nuevo usuario (solo admin)' })
   @Roles('admin')
-  @ApiOperation({ summary: 'Crear nuevo usuario' })
-  @ApiResponse({ status: 201, description: 'Usuario creado exitosamente' })
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Post()
+  create(@Body() dto: CreateUserDto) {
+    return this.usersService.create(dto);
   }
 
-  @Get()
   @ApiOperation({ summary: 'Obtener todos los usuarios' })
+  @Get()
   findAll() {
     return this.usersService.findAll();
   }
 
-  @Get(':id')
   @ApiOperation({ summary: 'Obtener usuario por ID' })
-  @ApiResponse({ status: 200, description: 'Usuario obtenido exitosamente' })
-  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
-  findOne(@Param('id') id: string) {
+  @Get(':id')
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.findOne(id);
   }
 
-  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar usuario (solo admin)' })
   @Roles('admin')
-  @ApiOperation({ summary: 'Actualizar usuario' })
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  @Patch(':id')
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) {
+    return this.usersService.update(id, dto);
   }
 
-  @Delete(':id')
+  @ApiOperation({ summary: 'Cambiar contraseña propia' })
+  @Post('me/change-password')
+  async changePassword(@Request() req, @Body() dto: ChangePasswordDto) {
+    const user = await this.usersService.findOne(req.user.id);
+    const valid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+    if (!valid) throw new UnauthorizedException('Contraseña actual incorrecta');
+    await this.usersService.changePassword(req.user.id, dto.newPassword);
+    return { message: 'Contraseña actualizada exitosamente' };
+  }
+
+  @ApiOperation({ summary: 'Eliminar usuario (solo admin)' })
   @Roles('admin')
-  @ApiOperation({ summary: 'Eliminar usuario' })
-  remove(@Param('id') id: string) {
+  @Delete(':id')
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.remove(id);
   }
 }

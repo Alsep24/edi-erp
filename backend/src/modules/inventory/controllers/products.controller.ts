@@ -11,6 +11,7 @@ import { InventoryService } from '../services/inventory.service';
 import { CreateProductDto } from '../dto/create-product.dto';
 import { UpdateProductDto } from '../dto/update-product.dto';
 import { AdjustStockDto } from '../dto/adjust-stock.dto';
+import { PaginationDto } from '../../../common/dto/pagination.dto';
 
 @ApiTags('products')
 @ApiBearerAuth()
@@ -29,10 +30,13 @@ export class ProductsController {
     return this.productsService.create(dto);
   }
 
-  @ApiOperation({ summary: 'Get all active products' })
+  @ApiOperation({ summary: 'Get all active products (paginated)' })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @Get()
-  findAll() {
-    return this.productsService.findAll();
+  findAll(@Query() pagination: PaginationDto, @Query('search') search?: string) {
+    return this.productsService.findAll(pagination, search);
   }
 
   @ApiOperation({ summary: 'Get products with low stock' })

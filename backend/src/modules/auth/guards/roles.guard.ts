@@ -1,10 +1,10 @@
-// roles.guard.ts
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { User } from '../../users/entities/user.entity';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(private readonly reflector: Reflector) {}
 
   canActivate(ctx: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
@@ -12,27 +12,16 @@ export class RolesGuard implements CanActivate {
       ctx.getClass(),
     ]);
 
-    if (!requiredRoles || requiredRoles.length === 0) {
-      return true;
-    }
+    if (!requiredRoles || requiredRoles.length === 0) return true;
 
-    const request = ctx.switchToHttp().getRequest();
-    const user = request.user;
+    const user: User = ctx.switchToHttp().getRequest().user;
+    if (!user) return false;
 
-    if (!user) {
-      return false;
-    }
+    // Admin tiene acceso total
+    if (user.isAdmin) return true;
 
-    const userRoles: string[] = [];
-
-    if (Array.isArray(user.roles)) {
-      userRoles.push(...user.roles);
-    }
-
-    if (user.isAdmin) {
-      userRoles.push('admin');
-    }
-
-    return requiredRoles.some((role) => userRoles.includes(role));
+    // Verificar contra roles asignados al usuario
+    const userRoleNames = (user.roles ?? []).map((r) => r.name.toLowerCase());
+    return requiredRoles.some((role) => userRoleNames.includes(role.toLowerCase()));
   }
 }

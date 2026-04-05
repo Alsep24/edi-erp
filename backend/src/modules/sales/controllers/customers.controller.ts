@@ -9,6 +9,7 @@ import { Roles } from '../../auth/decorators/roles.decorator';
 import { CustomersService } from '../services/customers.service';
 import { CreateCustomerDto } from '../dto/create-customer.dto';
 import { UpdateCustomerDto } from '../dto/update-customer.dto';
+import { PaginationDto } from '../../../common/dto/pagination.dto';
 
 @ApiTags('customers')
 @ApiBearerAuth()
@@ -23,11 +24,13 @@ export class CustomersController {
     return this.customersService.create(dto);
   }
 
-  @ApiOperation({ summary: 'Get all customers' })
-  @ApiQuery({ name: 'search', required: false, description: 'Search by name, email or tax ID' })
+  @ApiOperation({ summary: 'Get all customers (paginated)' })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @Get()
-  findAll(@Query('search') search?: string) {
-    return this.customersService.findAll(search);
+  findAll(@Query() pagination: PaginationDto, @Query('search') search?: string) {
+    return this.customersService.findAll(pagination, search);
   }
 
   @ApiOperation({ summary: 'Get customer by ID' })

@@ -1,41 +1,64 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import {
+  Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { tap, catchError } from 'rxjs/operators';
+import { throwError } from 'rxjs';
 import { AuditService } from '../../modules/audit/services/audit.service';
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(AuditInterceptor.name);
+
   constructor(private readonly auditService: AuditService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
-    const method = request.method;
+    const { method, ip, params, url } = request;
     const user = request.user;
-    const ip = request.ip;
-    const userAgent = request.headers['user-agent'];
-    const entityId = request.params?.id ?? null;
+    const userAgent = request.headers['user-agent'] ?? 'unknown';
+    const entityId = params?.id ?? null;
     const entityType = context.getClass().name.replace('Controller', '');
+    const startTime = Date.now();
 
     return next.handle().pipe(
       tap(async (responseData) => {
-        let action: string | null = null;
-        if (['POST'].includes(method)) action = 'CREATE';
-        if (['PUT', 'PATCH'].includes(method)) action = 'UPDATE';
-        if (method === 'DELETE') action = 'DELETE';
-        if (request.route?.path === 'login' || request.url.includes('login')) action = 'LOGIN';
+        const ms = Date.now() - startTime;
+        this.logger.log(`${method} ${url} → 2xx [${ms}ms] user=${user?.id ?? 'anonymous'}`);
 
-        if (action) {
-          await this.auditService.log({
-            userId: user?.id,
-            entityType,
-            entityId: entityId || (responseData && responseData.id),
-            action,
-            newState: responseData,
-            ipAddress: ip,
-            userAgent,
-          });
+        let action: string | null = null;
+        if (method === 'POST') action = url.includes('login') ? 'LOGIN' : 'CREATE';
+        if (method === 'PUT' || method === 'PATCH') action = 'UPDATE';
+        if (method === 'DELETE') action = 'DELETE';
+
+        if (action && this.shouldAudit(url)) {
+          try {
+            await this.auditService.log({
+              userId: user?.id,
+              entityType,
+              entityId: entityId || (responseData && responseData.id),
+              action,
+              newState: responseData,
+              ipAddress: ip,
+              userAgent,
+            });
+          } catch (err) {
+            this.logger.error('Error al guardar audit log', err);
+          }
         }
       }),
+      catchError((error) => {
+        const ms = Date.now() - startTime;
+        this.logger.warn(
+          `${method} ${url} → ${error.status ?? 500} [${ms}ms] ${error.message}`,
+        );
+        return throwError(() => error);
+      }),
     );
+  }
+
+  private shouldAudit(url: string): boolean {
+    // No auditar endpoints de sólo lectura ni documentación
+    return !url.includes('/docs') && !url.includes('/health');
   }
 }

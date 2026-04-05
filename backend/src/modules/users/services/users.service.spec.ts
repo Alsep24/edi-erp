@@ -1,48 +1,64 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import { UsersService } from './users.service';
 import { User } from '../entities/user.entity';
 
+const mockUserRepo = {
+  create: jest.fn(),
+  save: jest.fn(),
+  find: jest.fn(),
+  findOne: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+};
+
+const mockConfigService = {
+  get: jest.fn().mockReturnValue('10'),
+};
+
 describe('UsersService', () => {
   let service: UsersService;
-  let repo: Repository<User>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
-        { provide: getRepositoryToken(User), useClass: Repository },
+        { provide: getRepositoryToken(User), useValue: mockUserRepo },
+        { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
-    repo = module.get<Repository<User>>(getRepositoryToken(User));
+    jest.clearAllMocks();
   });
 
-  it('should create a user', async () => {
-    const dto = { username: 'u', email: 'e', password: 'p' } as any;
-    const entity = { id: '1' } as User;
-    jest.spyOn(repo, 'create').mockReturnValue(entity);
-    jest.spyOn(repo, 'save').mockResolvedValue(entity);
+  it('debería crear un usuario con contraseña hasheada', async () => {
+    const dto = { username: 'john', email: 'john@example.com', password: 'secret123' } as any;
+    const entity = { id: 'u1', username: 'john' } as User;
+    mockUserRepo.create.mockReturnValue(entity);
+    mockUserRepo.save.mockResolvedValue(entity);
 
     const result = await service.create(dto);
-
-    expect(repo.create).toHaveBeenCalledWith({
-      username: 'u',
-      email: 'e',
-      passwordHash: 'p',
-      firstName: undefined,
-      lastName: undefined,
-      isAdmin: false,
-    });
-    expect(repo.save).toHaveBeenCalledWith(entity);
-    expect(result).toBe(entity);
+    expect(mockUserRepo.save).toHaveBeenCalled();
+    // Verificar que se guarda el hash, no la contraseña en texto plano
+    const createCall = mockUserRepo.create.mock.calls[0][0];
+    expect(createCall.passwordHash).toBeDefined();
+    expect(createCall.passwordHash).not.toBe('secret123');
+    expect(result.username).toBe('john');
   });
 
-  it('should find all', async () => {
-    const data = [{} as User];
-    jest.spyOn(repo, 'find').mockResolvedValue(data);
-    expect(await service.findAll()).toBe(data);
+  it('debería retornar todos los usuarios', async () => {
+    const users = [{ id: 'u1' } as User, { id: 'u2' } as User];
+    mockUserRepo.find.mockResolvedValue(users);
+    const result = await service.findAll();
+    expect(result).toHaveLength(2);
+  });
+
+  it('debería buscar usuario por username', async () => {
+    const user = { id: 'u1', username: 'john' } as User;
+    mockUserRepo.findOne.mockResolvedValue(user);
+    const result = await service.findByUsername('john');
+    expect(result?.username).toBe('john');
   });
 });

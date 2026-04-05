@@ -1,4 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity, PrimaryGeneratedColumn, Column,
+  CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable,
+} from 'typeorm';
+import { Role } from '../../roles/entities/role.entity';
 
 @Entity('users', { schema: 'core' })
 export class User {
@@ -25,6 +29,15 @@ export class User {
 
   @Column({ name: 'is_admin', default: false })
   isAdmin: boolean;
+
+  @ManyToMany(() => Role, { eager: false })
+  @JoinTable({
+    name: 'user_roles',
+    joinColumn: { name: 'user_id' },
+    inverseJoinColumn: { name: 'role_id' },
+    schema: 'core',
+  })
+  roles: Role[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;

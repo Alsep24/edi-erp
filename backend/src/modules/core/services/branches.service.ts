@@ -15,7 +15,7 @@ export class BranchesService {
 
   async create(dto: CreateBranchDto): Promise<Branch> {
     const entity = this.branchRepo.create(dto as any);
-    return this.branchRepo.save(entity);
+    return this.branchRepo.save(entity) as unknown as Branch;
   }
 
   findAll(): Promise<Branch[]> {
@@ -31,7 +31,7 @@ export class BranchesService {
   }
 
   async update(id: string, dto: UpdateBranchDto): Promise<Branch | null> {
-    await this.branchRepo.update(id, dto);
+    await this.branchRepo.update(id, dto as any);
     return this.findOne(id);
   }
 

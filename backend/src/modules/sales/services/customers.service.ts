@@ -1,12 +1,15 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Customer } from '../entities/customer.entity';
 import { CreateCustomerDto } from '../dto/create-customer.dto';
 import { UpdateCustomerDto } from '../dto/update-customer.dto';
+import { PaginationDto, PaginatedResult, paginate } from '../../../common/dto/pagination.dto';
 
 @Injectable()
 export class CustomersService {
+  private readonly logger = new Logger(CustomersService.name);
+
   constructor(
     @InjectRepository(Customer)
     private readonly customerRepo: Repository<Customer>,
@@ -15,32 +18,32 @@ export class CustomersService {
   async create(dto: CreateCustomerDto): Promise<Customer> {
     if (dto.email) {
       const existing = await this.customerRepo.findOne({ where: { email: dto.email } });
-      if (existing) throw new ConflictException(`Customer with email '${dto.email}' already exists`);
+      if (existing) throw new ConflictException(`Cliente con email '${dto.email}' ya existe`);
     }
     const customer = this.customerRepo.create(dto);
-    return this.customerRepo.save(customer);
+    const saved = await this.customerRepo.save(customer);
+    this.logger.log(`Cliente creado: ${saved.name}`);
+    return saved;
   }
 
-  findAll(search?: string): Promise<Customer[]> {
+  async findAll(dto: PaginationDto, search?: string): Promise<PaginatedResult<Customer>> {
+    const qb = this.customerRepo.createQueryBuilder('c').where('c.is_active = true');
+
     if (search) {
-      return this.customerRepo.find({
-        where: [
-          { name: Like(`%${search}%`), isActive: true },
-          { email: Like(`%${search}%`), isActive: true },
-          { taxId: Like(`%${search}%`), isActive: true },
-        ],
-        order: { name: 'ASC' },
-      });
+      qb.andWhere(
+        '(c.name ILIKE :search OR c.email ILIKE :search OR c.tax_id ILIKE :search)',
+        { search: `%${search}%` },
+      );
     }
-    return this.customerRepo.find({
-      where: { isActive: true },
-      order: { name: 'ASC' },
-    });
+
+    qb.orderBy('c.name', 'ASC').skip(dto.skip).take(dto.limit ?? 20);
+    const [data, total] = await qb.getManyAndCount();
+    return paginate(data, total, dto);
   }
 
   async findOne(id: string): Promise<Customer> {
     const customer = await this.customerRepo.findOne({ where: { id } });
-    if (!customer) throw new NotFoundException(`Customer #${id} not found`);
+    if (!customer) throw new NotFoundException(`Cliente #${id} no encontrado`);
     return customer;
   }
 

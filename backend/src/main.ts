@@ -1,41 +1,62 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import * as cookieParser from 'cookie-parser';
+
+const logger = new Logger('Bootstrap');
+
+function validateEnv() {
+  const required = ['JWT_SECRET', 'DB_HOST', 'DB_USERNAME', 'DB_PASSWORD', 'DB_NAME'];
+  const missing = required.filter((key) => !process.env[key]);
+  if (missing.length > 0) {
+    logger.warn(
+      `Variables de entorno no configuradas (usando valores por defecto): ${missing.join(', ')}`,
+    );
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(`Variables requeridas en producción: ${missing.join(', ')}`);
+    }
+  }
+  if (process.env.JWT_SECRET === 'secretKey') {
+    logger.warn('JWT_SECRET está usando el valor por defecto. Cambiarlo en producción.');
+  }
+}
 
 async function bootstrap() {
+  validateEnv();
+
   const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn', 'log'],
+    logger: ['error', 'warn', 'log', 'verbose'],
+    bufferLogs: true,
   });
 
-  // Prefijo global para todas las rutas API
   app.setGlobalPrefix('api');
-
-  // Versionado de API
   app.enableVersioning({ type: VersioningType.URI });
 
-  // Filtro global de excepciones HTTP
-  app.useGlobalFilters(new HttpExceptionFilter());
+  // Cookie parser (para refresh token en HTTP-only cookie)
+  app.use(cookieParser());
 
-  // Configuración global de validación de datos
+  // Filtros y pipes globales
+  app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       transform: true,
       forbidNonWhitelisted: true,
+      transformOptions: { enableImplicitConversion: true },
     }),
   );
 
-  // Configuración de CORS
+  // CORS
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: process.env.CORS_ORIGIN || 'http://localhost:8080',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language'],
     credentials: true,
   });
 
-  // Documentación Swagger / OpenAPI
+  // Swagger / OpenAPI
   const config = new DocumentBuilder()
     .setTitle('EDI-ERP API')
     .setDescription(
@@ -60,7 +81,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`Aplicación iniciada en: http://localhost:${port}/api`);
-  console.log(`Documentación Swagger en: http://localhost:${port}/api/docs`);
+  logger.log(`Aplicación iniciada en: http://localhost:${port}/api`);
+  logger.log(`Documentación Swagger en: http://localhost:${port}/api/docs`);
 }
 bootstrap();

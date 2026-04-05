@@ -1,5 +1,5 @@
-import PdfPrinter from 'pdfmake';
-import { TDocumentDefinitions } from 'pdfmake/interfaces';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const PdfPrinter = require('pdfmake');
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -11,7 +11,7 @@ export class PdfService {
     },
   };
 
-  generate(docDefinition: TDocumentDefinitions): Buffer {
+  generate(docDefinition: Record<string, unknown>): Buffer {
     const printer = new PdfPrinter(this.fonts);
     const pdfDoc = printer.createPdfKitDocument(docDefinition);
     const chunks: Buffer[] = [];
