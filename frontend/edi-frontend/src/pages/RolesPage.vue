@@ -1,83 +1,142 @@
-<template>
-  <q-page class="q-pa-md">
-    <form @submit.prevent="saveRole" novalidate class="q-mb-md">
-      <div class="q-mb-sm">
-        <label for="role-name">Nombre</label>
-        <q-input
-          id="role-name"
-          v-model="newRole.name"
-          aria-required="true"
-          :aria-invalid="errors.name ? 'true' : 'false'"
-        />
-        <div v-if="errors.name" role="alert">{{ errors.name }}</div>
-      </div>
-      <div class="q-mb-sm">
-        <label for="role-description">Descripción</label>
-        <q-input
-          id="role-description"
-          v-model="newRole.description"
-          aria-required="true"
-          :aria-invalid="errors.description ? 'true' : 'false'"
-        />
-        <div v-if="errors.description" role="alert">{{ errors.description }}</div>
-      </div>
-      <q-btn label="Guardar" color="primary" type="submit" />
-    </form>
-
-    <q-list bordered>
-      <q-item v-for="role in rolesStore.roles" :key="role.id">
-        <q-item-section>
-          <q-item-label>{{ role.name }}</q-item-label>
-          <q-item-label caption>{{ role.description }}</q-item-label>
-        </q-item-section>
-        <q-item-section side>
-          <q-btn dense flat icon="delete" @click="rolesStore.deleteRole(role.id)" />
-        </q-item-section>
-      </q-item>
-    </q-list>
-  </q-page>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useRolesStore } from 'stores/roles';
+import { api } from 'boot/axios';
+import { useQuasar } from 'quasar';
 
-const rolesStore = useRolesStore();
-const newRole = ref({ name: '', description: '' });
-const errors = ref<{ name: string; description: string }>({
-  name: '',
-  description: ''
-});
+const $q = useQuasar();
 
-onMounted(() => {
-  rolesStore.fetchRoles();
-});
+interface Role {
+  id: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+  permissions: { id: string; name: string; module: string }[];
+}
 
-async function saveRole() {
-  errors.value = { name: '', description: '' };
-  let firstInvalid: string | null = null;
+const roles = ref<Role[]>([]);
+const loading = ref(false);
+const showDialog = ref(false);
+const saving = ref(false);
+const editingId = ref<string | null>(null);
 
-  if (!newRole.value.name) {
-    errors.value.name = 'El nombre es obligatorio';
-    firstInvalid = 'role-name';
+const form = ref({ name: '', description: '' });
+
+async function load() {
+  loading.value = true;
+  try {
+    const res = await api.get('/roles');
+    roles.value = res.data;
+  } catch {
+    $q.notify({ type: 'negative', message: 'Error al cargar roles' });
+  } finally {
+    loading.value = false;
   }
+}
 
-  if (!newRole.value.description) {
-    errors.value.description = 'La descripción es obligatoria';
-    if (!firstInvalid) {
-      firstInvalid = 'role-description';
-    }
-  }
+function openCreate() {
+  editingId.value = null;
+  form.value = { name: '', description: '' };
+  showDialog.value = true;
+}
 
-  if (firstInvalid) {
-    const el = document.getElementById(firstInvalid);
-    if (el) {
-      (el as HTMLElement).focus();
-    }
+function openEdit(role: Role) {
+  editingId.value = role.id;
+  form.value = { name: role.name, description: role.description ?? '' };
+  showDialog.value = true;
+}
+
+async function save() {
+  if (!form.value.name) {
+    $q.notify({ type: 'warning', message: 'El nombre del rol es obligatorio' });
     return;
   }
-
-  await rolesStore.createRole(newRole.value);
-  newRole.value = { name: '', description: '' };
+  saving.value = true;
+  try {
+    if (editingId.value) {
+      await api.patch(`/roles/${editingId.value}`, form.value);
+      $q.notify({ type: 'positive', message: 'Rol actualizado' });
+    } else {
+      await api.post('/roles', form.value);
+      $q.notify({ type: 'positive', message: 'Rol creado' });
+    }
+    showDialog.value = false;
+    await load();
+  } catch (err: unknown) {
+    const e = err as { response?: { data?: { message?: string } } };
+    $q.notify({ type: 'negative', message: e.response?.data?.message ?? 'Error al guardar' });
+  } finally {
+    saving.value = false;
+  }
 }
+
+async function remove(id: string) {
+  $q.dialog({ title: 'Confirmar', message: '¿Desactivar este rol?', cancel: true }).onOk(async () => {
+    try {
+      await api.delete(`/roles/${id}`);
+      $q.notify({ type: 'positive', message: 'Rol desactivado' });
+      await load();
+    } catch {
+      $q.notify({ type: 'negative', message: 'Error al eliminar' });
+    }
+  });
+}
+
+onMounted(load);
 </script>
+
+<template>
+  <q-page class="q-pa-md">
+    <div class="row items-center q-mb-md">
+      <div class="text-h5 text-weight-bold col">Roles y Permisos</div>
+      <q-btn color="primary" icon="add" label="Nuevo Rol" @click="openCreate" unelevated />
+    </div>
+
+    <div class="row q-col-gutter-md">
+      <div v-for="role in roles" :key="role.id" class="col-12 col-sm-6 col-md-4">
+        <q-card flat bordered>
+          <q-card-section>
+            <div class="row items-center">
+              <div class="col">
+                <div class="text-subtitle1 text-weight-bold">{{ role.name }}</div>
+                <div class="text-caption text-grey-6">{{ role.description ?? 'Sin descripción' }}</div>
+              </div>
+              <q-btn flat round dense icon="edit" color="primary" @click="openEdit(role)" />
+              <q-btn flat round dense icon="delete" color="negative" @click="remove(role.id)" />
+            </div>
+          </q-card-section>
+          <q-separator v-if="role.permissions?.length" />
+          <q-card-section v-if="role.permissions?.length" class="q-pt-sm">
+            <div class="text-caption text-grey-6 q-mb-xs">Permisos:</div>
+            <q-chip
+              v-for="p in role.permissions"
+              :key="p.id"
+              dense size="sm"
+              color="blue-1" text-color="blue-8"
+            >
+              {{ p.name }}
+            </q-chip>
+          </q-card-section>
+        </q-card>
+      </div>
+      <div v-if="roles.length === 0 && !loading" class="col-12 text-center text-grey-6 q-py-xl">
+        No hay roles creados
+      </div>
+    </div>
+
+    <q-dialog v-model="showDialog" persistent>
+      <q-card style="min-width: 360px">
+        <q-card-section class="text-h6 bg-primary text-white">
+          {{ editingId ? 'Editar Rol' : 'Nuevo Rol' }}
+        </q-card-section>
+        <q-card-section class="q-gutter-sm">
+          <q-input v-model="form.name" label="Nombre del rol *" outlined dense />
+          <q-input v-model="form.description" label="Descripción" outlined dense type="textarea" rows="2" />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Cancelar" v-close-popup />
+          <q-btn color="primary" :label="editingId ? 'Actualizar' : 'Crear'" @click="save" :loading="saving" unelevated />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+  </q-page>
+</template>
